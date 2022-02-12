@@ -8,7 +8,7 @@ const svg = fs.readFileSync(
 const exec = (str, regex, name, dbg=false) => {
   const group = regex.exec(str)?.[1];
   if(group) {
-    if(dbg) console.log(name + ': ' + group);
+    if(dbg) console.log(`${name}: "${group}"`);
     return group;
   }
   console.log(`\nError: "${name}" missing from\n` +
@@ -17,22 +17,41 @@ const exec = (str, regex, name, dbg=false) => {
 }
 
 const reName    = new RegExp(/<font.*?id="(\w+?)".*?>/);
-const reHeight  = new RegExp(/<font-face.*?cap-height="(.*?)".*?\/>/s);
+const reHeight  = new RegExp(/<font-face.*?cap-height="(\d*?)".*?\/>/s);
 const reGlyph   = new RegExp(/<glyph\s+?(.*?)\/>/g);
 const reUnicode = new RegExp(/unicode="(.)"/);
+const reHAdvX   = new RegExp(/horiz-adv-x="(\d*?)"/s);
+const reVec     = new RegExp(
+  /M\s+?(\d+?)\s+?(\d+?)\s+?L\s+?(\d+?)\s+?(\d+?)/s);
 
-const name   = exec(svg, reName,   'name');
-const height = exec(svg, reHeight, 'height');
+const name   =          exec(svg, reName,   'name');
+const height = parseInt(exec(svg, reHeight, 'height'));
 
-const output = {name, height};
-console.log(output);
+let output = `{name:'${name}',height:${height},`;
+// console.log(output);
 
-// let glyphExec;
-// while (glyphExec = reGlyph.exec(svg)) {
-//   const glyph = glyphExec[0];
-//   console.log({glyph});
+let glyphExec;
+while (glyphExec = reGlyph.exec(svg)) {
+  const glyph = glyphExec[0];
+  // console.log({glyph});
 
-//   const unicode = reUnicode.exec(glyph)?.[1];
-//   if(missingErr(unicode, 'unicode in glyph')) break;
-//   console.log({unicode});
-// }
+  const unicode = exec(glyph, reUnicode, 'unicode').charCodeAt(0);
+  const hAdvX   = exec(glyph, reHAdvX, 'horiz-adv-x');
+
+  output += `${unicode}:[${parseInt(hAdvX)},`;
+  reVec.lastIdx = 0
+  let vec;
+  while (vec = reVec.exec(glyph)) {
+    // console.log({vec});
+    const [,startX, startY, endX, endY] = vec;
+    output += `${startX},${startY},${endX},${endY},`;
+    break;
+  }
+  output += '],';
+
+  output += '}';
+
+  console.log(output);
+
+  break;
+}

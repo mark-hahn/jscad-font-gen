@@ -49,8 +49,8 @@ cap-height="500"
 x-height="300"
 />
 <missing-glyph horiz-adv-x="378" />
-<glyph unicode=" " glyph-name="space" horiz-adv-x="378" />
 <glyph unicode="!" glyph-name="exclam" horiz-adv-x="378" d="M 296 662 L 265 630 L 202 598 L 265 567 L 296 220 M 296 567 L 328 598 L 296 630 L 265 598 L 296 567 L 296 220 M 296 662 L 328 630 L 391 598 L 328 567 L 296 220 M 296 94.5 L 233 31.5 L 296 0 L 359 31.5 L 296 94.5 M 296 63 L 265 31.5 L 328 31.5 L 296 63" />
+<glyph unicode=" " glyph-name="space" horiz-adv-x="378" />
 </font>
 </defs>
 </svg>

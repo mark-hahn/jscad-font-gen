@@ -1,6 +1,21 @@
 // import {parse} from "svg-parser"
 import fs from 'fs'
 
+const letters = ['C','a','m',,
+                 'W','y','a','t',
+                 'B','o','w','i','e',];
+
+const fontPaths = ['fonts/EMS/EMSBird.svg',
+                   'fonts/EMS/EMSDecorousScript.svg',
+                   'fonts/EMS/EMSHerculean.svg',
+                   'fonts/EMS/EMSOsmotron.svg',
+                   'fonts/EMS/EMSPepita.svg',
+                   'fonts/EMS/EMSQwandry.svg',
+                   'fonts/EMS/EMSReadability.svg',
+                   'fonts/EMS/EMSReadabilityItalic.svg',
+                   'fonts/EMS/EMSSpaceRocks.svg',
+                   ];
+
 const exec1 = (regex, str, name, dbgOk=false, dbgErr=true) => {
   const group = regex.exec(str)?.[1];
   if(group) {
@@ -28,10 +43,7 @@ const reGlyph    = new RegExp(/<glyph\s+?(.*?)\/>/igs);
 const reUnicode  = new RegExp(/unicode="(.)"/i);
 const reHAdvX    = new RegExp(/horiz-adv-x="([\d\.]*?)"/is);
 const rePoints   = new RegExp(/d="(.*?)"/igs);
-const rePoint    = new RegExp(/([ML])\s+([\d\.]+)\s+([\d\.]+)/igs);
-
-const fontPaths = ['fonts/Hershey/HersheySans1.svg', 
-                   'fonts/Hershey/HersheyGothEnglish.svg'];
+const rePoint    = new RegExp(/([ML])\s+([\d\.-]+)\s+([\d\.-]+)/igs);
 
 let output = `\nconst fonts = {`
 
@@ -47,7 +59,7 @@ for (let fontPath of fontPaths) {
   while (glyph = exec1(reGlyph, svg, 'glyph', false, false)) {
 
     const unicode = exec1(reUnicode, glyph, 'unicode',false,false);
-    if(!unicode || ![' ','!','W','y','a','t'].includes(unicode)) continue;
+    if(!unicode || !letters.includes(unicode)) continue;
 
     output += `\n${unicode.charCodeAt(0)}:`;
     output += `[${exec1(reHAdvX, glyph, 'horiz-adv-x')}`;

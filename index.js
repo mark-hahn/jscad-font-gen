@@ -1,20 +1,86 @@
-// import {parse} from "svg-parser"
-import fs from 'fs'
+import fs        from 'fs'
+import yargs     from 'yargs'
+import {hideBin} from 'yargs/helpers'
 
-const letters = ['C','a','m',,
-                 'W','y','a','t',
-                 'B','o','w','i','e',];
+const argv = yargs(hideBin(process.argv)).argv;
 
-const fontPaths = ['fonts/EMS/EMSBird.svg',
-                   'fonts/EMS/EMSDecorousScript.svg',
-                   'fonts/EMS/EMSHerculean.svg',
-                   'fonts/EMS/EMSOsmotron.svg',
-                   'fonts/EMS/EMSPepita.svg',
-                   'fonts/EMS/EMSQwandry.svg',
-                   'fonts/EMS/EMSReadability.svg',
-                   'fonts/EMS/EMSReadabilityItalic.svg',
-                   'fonts/EMS/EMSSpaceRocks.svg',
-                   ];
+let lettersRegex = argv.l;
+if(!argv.l) lettersRegex = '[\\x00-\\xFF]';
+let reLetters;
+try {
+  reLetters = new RegExp(lettersRegex);
+}
+catch(e) {
+    console.log(`Error: invalid regex "${lettersRegex}"`);
+    process.exit();
+}
+
+let inputFile = argv.i;
+if(!fs.existsSync(inputFile)) {
+  if(fs.existsSync('fonts')) {
+    console.log(`Warning: input "${inputFile}" doesn't exist, ` + 
+                `using "fonts/" directory`);
+    inputFile = 'fonts';
+  }
+  else {
+    console.log(`Error: neither "${inputFile}" ` +
+                `nor "fonts/" directory found`);
+    process.exit();
+  }
+}
+
+let outputFile = argv.o;
+if(!outputFile || !fs.existsSync(outputFile)) outputFile = 'fonts';
+if(!fs.existsSync(outputFile)) {
+  if(fs.existsSync('fonts')) {
+    console.log(`Warning: output "${outputFile}" doesn't exist, ` + 
+                `using "fonts/" directory`);
+    outputFile = 'fonts';
+  }
+  else {
+    console.log(`Error: neither ${outputFile} ` +
+                `nor fonts directory found`);
+    process.exit();
+  }
+}
+console.log(`>>> Using letter regex "${lettersRegex}" ` +
+            `with input "${inputFile}" and output "${outputFile}"`);
+
+let fontPaths = [];
+
+const walkDir = function(dir) {
+  var list = fs.readdirSync(dir);
+  list.forEach( (file) => {
+    file = dir + '/' + file;
+    var stat = fs.statSync(file);
+    if (stat && stat.isDirectory()) { 
+      fontPaths = fontPaths.concat(walkDir(file));
+    } else { 
+      if(file?.endsWith('.svg')) fontPaths.push(file);
+    }
+  });
+}
+if(fs.existsSync(inputFile)) {
+  console.log(`Error: ${inputFile} not found`);
+  process.exit();
+}
+else if(fs.lstatSync(inputFile).isDirectory()) {
+  console.log(`Scanning input directory ${inputFile}`);
+  walkDir(inputFile);
+}
+else {
+  if(inputFile?.endsWith('.svg')) fontPaths = [inputFile];
+  else {
+    console.log(`Error: ${inputFile} is not an.svg file`);
+    process.exit();
+  }
+}
+if(fontPaths.length == 0) {
+  console.log(`Error: no .svg file found`);
+  process.exit();
+}
+
+console.log({fontPaths});
 
 const exec1 = (regex, str, name, dbgOk=false, dbgErr=true) => {
   const group = regex.exec(str)?.[1];
@@ -22,7 +88,7 @@ const exec1 = (regex, str, name, dbgOk=false, dbgErr=true) => {
     if(dbgOk) console.log(`${name}: "${group}"`);
     return group;
   }
-  if(dbgErr) console.log(`\nError: "${name}" missing from\n` +
+  if(dbgErr) console.log(`Error: "${name}" missing from ` +
               `${str.slice(0,80)} ${str.length > 80 ? ' ...' : ''}`);
   return null;
 }
@@ -32,7 +98,7 @@ const exec = (regex, str, name, dbgOk=false, dbgErr=true) => {
     if(dbgOk) console.log(`${name}: "${groups}"`);
     return groups;
   }
-  if(dbgErr) console.log(`\nError: "${name}" missing from\n` +
+  if(dbgErr) console.log(`Error: "${name}" missing from` +
               `${str.slice(0,80)} ${str.length > 80 ? ' ...' : ''}`);
   return null;
 }
@@ -44,8 +110,6 @@ const reUnicode  = new RegExp(/unicode="(.)"/i);
 const reHAdvX    = new RegExp(/horiz-adv-x="([\d\.]*?)"/is);
 const rePoints   = new RegExp(/d="(.*?)"/igs);
 const rePoint    = new RegExp(/([ML])\s+([\d\.-]+)\s+([\d\.-]+)/igs);
-
-let output = `\nconst fonts = {`
 
 for (let fontPath of fontPaths) { 
 
@@ -59,7 +123,7 @@ for (let fontPath of fontPaths) {
   while (glyph = exec1(reGlyph, svg, 'glyph', false, false)) {
 
     const unicode = exec1(reUnicode, glyph, 'unicode',false,false);
-    if(!unicode || !letters.includes(unicode)) continue;
+    if(!unicode || !reLetters.test(unicode)) continue;
 
     output += `\n${unicode.charCodeAt(0)}:`;
     output += `[${exec1(reHAdvX, glyph, 'horiz-adv-x')}`;

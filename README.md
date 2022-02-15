@@ -24,9 +24,10 @@ Command-line options
   - The svg file to convert or a directory containing svg files.
 
 * -o output-path.js
+  - Output file.  Only one file is created even if there are multiple input files.
 
-Usage
+Usage examples ...
 ```
   cd jscad-font-gen
-  node index.js 
+  node index.js # Convert all ascii chars in all fonts/ svg files (recursive) into one file 'fonts/jscad-fonts.js'
 ```

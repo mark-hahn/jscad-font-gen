@@ -2,6 +2,9 @@ import fs        from 'fs'
 import yargs     from 'yargs'
 import {hideBin} from 'yargs/helpers'
 
+import fonts     from './fonts/jscad-fonts.js'
+console.log(fonts.EMSSpaceRocks);
+
 //////////  PROCESS COMMAND-LINE OPTIONS  ///////////
 const argv = yargs(hideBin(process.argv)).argv;
 
@@ -38,8 +41,7 @@ if(!fs.existsSync(inputFile)) {
   }
 }
 
-const DEFAULT_OUTPUT = 
-  '/mnt/c/Users/mark/apps/neon/jscad-text-gen/text-gen.js'
+const DEFAULT_OUTPUT = 'fonts/jscad-fonts.js'
 let outputFile = argv.o;
 if(outputFile === true) {
   console.log(`Error: found "-o" but no file path follows`);
@@ -176,11 +178,9 @@ for (let fontPath of fontPaths) {
   output += '},\n';
 }
 output += '}\n';
-if(makeModule) output +=
-`if (typeof module === 'object' && module.exports) {
-  module.exports.fonts = fonts;
-}
-`;
+
+if(makeModule) output += '\nexport default fonts;\n\n'
+
 output += INJECTED_TEXT_OUTRO;
 
 let fileOut = '';

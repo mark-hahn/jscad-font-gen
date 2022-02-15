@@ -32,7 +32,9 @@ Usage examples ...
 
   node index.js -l [A-Z] # Convert only uppercase letters.
 
-  node index.js -m -i my-fonts  -o my-fonts/out.js # Convert all svg files in my-fonts directory and put them in a module fonts/out.js.  Replace contents if exists.
+  node index.js -m -i my-fonts -o my-fonts/out.js # Convert all svg files in my-fonts directory and put them in a module fonts/out.js.  Replace contents if exists.
+
+  node index.js -m -i fonts/EMS/EMSSpaceRocks.svg -o jscad-fonts/EMSSpaceRocks.js # Convert one file and create a module ready to import into an jscad file 
 ```
 
 The fonts are stored in an object.  Each property key is the font name taken from the id field in the svg source.  The property is the font data ready for a jscad text command.

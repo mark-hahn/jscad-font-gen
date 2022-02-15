@@ -13,7 +13,7 @@ Command-line options
 * -i regex  
 
   - Limit letters to ones that match the regex.
-  - Defaults to [\\x20-\\x7E] which matches ascii characters that jscad can handle
+  - Defaults to [\\x20-\\x7E] which matches all ascii characters that jscad can handle
   - Remember to enclose it in single-quotes if it has backslashes or spaces.
 
 * -m
@@ -28,12 +28,20 @@ Command-line options
 
 Usage examples ...
 ```
-  cd jscad-font-gen
-
   node index.js # Convert all ascii chars in all fonts/ svg files (recursive) and inject them into 'fonts/jscad-fonts.js' jscad file
 
-  node index,js -l [A-Z] # Convert only uppercase letters.
+  node index.js -l [A-Z] # Convert only uppercase letters.
 
-  node index,js -m -i my-fonts  -o my-fonts/out.js # Convert all svg files in my-fonts directory and put them in a module fonts/out.js.  Replace if exists.
+  node index.js -m -i my-fonts  -o my-fonts/out.js # Convert all svg files in my-fonts directory and put them in a module fonts/out.js.  Replace contents if exists.
+```
+
+The fonts are stored in an object.  Each property key is the font name taken from the id field in the svg source.
+
+Source example ...
+```
 
 ```
+
+There are ems and hershey fonts in the fonts directory.  These were taken from a github repo but I can't remember which one (anyone know?).  They were originally provided for use in the hershey extension for inkscape.
+
+License: MIT

@@ -29,5 +29,11 @@ Command-line options
 Usage examples ...
 ```
   cd jscad-font-gen
-  node index.js # Convert all ascii chars in all fonts/ svg files (recursive) into one file 'fonts/jscad-fonts.js'
+
+  node index.js # Convert all ascii chars in all fonts/ svg files (recursive) and inject them into 'fonts/jscad-fonts.js' jscad file
+
+  node index,js -l [A-Z] # Convert only uppercase letters.
+
+  node index,js -m -i my-fonts svg -o my-fonts/out.js # Convert all svg files in my-fonts directory and put them in a module out.js.
+
 ```

@@ -39,7 +39,9 @@ The fonts are stored in an object.  Each property key is the font name taken fro
 
 Source example ...
 ```
-
+import fonts from './fonts/jscad-fonts.js';
+let {width, segments} = vectorChar(
+      {font:fonts.EMSSpaceRocks, xOffset:0}, 'X');
 ```
 
 There are ems and hershey fonts in the fonts directory.  These were taken from a github repo but I can't remember which one (anyone know?).  They were originally provided for use in the hershey extension for inkscape.

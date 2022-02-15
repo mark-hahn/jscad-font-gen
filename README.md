@@ -44,6 +44,22 @@ let {width, segments} = vectorChar(
       {font:fonts.EMSSpaceRocks, xOffset:0}, 'X');
 ```
 
+Example of injected code into jscad source file.
+
+```
+//=== Fonts injected by jscad-font-gen ===
+const fonts = {
+EMSSpaceRocks:{height:500,
+97:[512,0.00,0.00,0.00,372.36,186.18,558.55,372.36,372.36,372.36,0.00,,0.00,186.18,372.36,186.18,],
+67:[512,372.36,0.00,0.00,0.00,0.00,558.55,372.36,558.55,],
+109:[512,0.00,0.00,0.00,558.55,186.18,372.36,372.36,558.55,372.36,0.00,],},
+}
+
+export default fonts;
+
+//=== End of injected fonts ===
+```
+
 There are ems and hershey fonts in the fonts directory.  These were taken from a github repo but I can't remember which one (anyone know?).  They were originally provided for use in the hershey extension for inkscape.
 
 License: MIT

@@ -10,7 +10,7 @@ npm i
 ```
 
 Command-line options
-* -i regex  
+* -l regex  
 
   - Limit letters to ones that match the regex.
   - Defaults to [\\x20-\\x7E] which matches all ascii characters that jscad can handle

@@ -170,9 +170,9 @@ for (let fontPath of fontPaths) {
       output += '],';
     }
   }
-  output += '}},\n';
+  output += '},\n';
 }
-output += INJECTED_TEXT_OUTRO;
+output += '}\n' + INJECTED_TEXT_OUTRO;
 
 let fileOut = fs.readFileSync(outputFile).toString();
 const reInjectionStr = INJECTED_TEXT_INTRO + 

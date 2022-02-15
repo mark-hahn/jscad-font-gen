@@ -34,6 +34,6 @@ Usage examples ...
 
   node index,js -l [A-Z] # Convert only uppercase letters.
 
-  node index,js -m -i my-fonts svg -o my-fonts/out.js # Convert all svg files in my-fonts directory and put them in a module out.js.
+  node index,js -m -i my-fonts  -o my-fonts/out.js # Convert all svg files in my-fonts directory and put them in a module fonts/out.js.  Replace if exists.
 
 ```

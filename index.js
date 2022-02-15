@@ -5,6 +5,8 @@ import {hideBin} from 'yargs/helpers'
 //////////  PROCESS COMMAND-LINE OPTIONS  ///////////
 const argv = yargs(hideBin(process.argv)).argv;
 
+const makeModule = argv.m;
+
 let lettersRegex = argv.l;
 if(lettersRegex === true) {
   console.log(`Error: found "-l" but no regex follows`);
@@ -44,15 +46,16 @@ if(outputFile === true) {
   process.exit();
 }
 if(!outputFile) outputFile = DEFAULT_OUTPUT;
-else if(!fs.existsSync(outputFile)) {
+else if(!makeModule && !fs.existsSync(outputFile)) {
   console.log(
     `Warning: file "${outputFile}" doesn't exist.`);
   console.log('The output file must exist for injection of font(s).');
+  console.log(`If you want to create a new module use -m option`);
   console.log(`using "${DEFAULT_OUTPUT}"`);
   outputFile = DEFAULT_OUTPUT;
 }
-if(!fs.existsSync(outputFile)) {
-  console.log(`Error: file ${outputFile} doesn't exit`);
+if(!makeModule && !fs.existsSync(outputFile)) {
+  console.log(`Error: file ${outputFile} doesn't exist`);
   process.exit();
 }
 
@@ -172,12 +175,23 @@ for (let fontPath of fontPaths) {
   }
   output += '},\n';
 }
-output += '}\n' + INJECTED_TEXT_OUTRO;
+output += '}\n';
+if(makeModule) output +=
+`if (typeof module === 'object' && module.exports) {
+  module.exports.fonts = fonts;
+}
+`;
+output += INJECTED_TEXT_OUTRO;
 
-let fileOut = fs.readFileSync(outputFile).toString();
+let fileOut = '';
+if(!makeModule) 
+  fileOut = fs.readFileSync(outputFile).toString();
+
 const reInjectionStr = INJECTED_TEXT_INTRO + 
                 '.*' + INJECTED_TEXT_OUTRO;
+
 const reInjection = new RegExp(reInjectionStr,'igs');
 fileOut = fileOut.replace(reInjection,'');
 fileOut += output;
+
 fs.writeFileSync(outputFile, fileOut);

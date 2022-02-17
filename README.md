@@ -17,8 +17,7 @@ Command-line options
   - Remember to enclose it in single-quotes if it has backslashes or spaces.
 
 * -m
-  - Flag that indicates the output should include code to make the file an importable module.
-  - If not specified then font data is injected directly into the output file.
+  - Flag that indicates the output should include code to make the file an importable module. An existing text/code in the module, but not in the injected section, will be retained.
 
 * -i input-path.svg
   - The svg file to convert or a directory containing svg files. Directory scanning is recursive. Only files with a `.svg` suffix will be processed.
@@ -32,9 +31,9 @@ Usage examples ...
 
   node index.js -l [A-Z] # Same as above but convert only uppercase letters.
 
-  node index.js -m -i my-fonts -o my-fonts/out.js # Convert all svg files in my-fonts directory and put them in a module fonts/out.js.  Replace injected contents if exists.
+  node index.js -m -i my-fonts -o my-fonts/out.js # Convert svg files in my-fonts directory and inject them in a module fonts/out.js.  If the files exists, replace any previously injected contents.
 
-  node index.js -m -i fonts/EMS/afont.svg -o jscad-fonts/afont.js # Convert one file and create a module ready to import into an jscad file 
+  node index.js -m -i fonts/EMS/afont.svg -o jscad-fonts/afont.js # Convert one file and create/update a module ready to import into an jscad file 
 ```
 
 The fonts are stored in an object.  Each property key is the font name taken from the id field in the svg source.  The property is the font data ready for a jscad text command.

@@ -21,20 +21,20 @@ Command-line options
   - If not specified then font data is injected directly into the output file.
 
 * -i input-path.svg
-  - The svg file to convert or a directory containing svg files.
+  - The svg file to convert or a directory containing svg files. Directory scanning is recursive. Only files with a `.svg` suffix will be processed.
 
 * -o output-path.js
-  - Output file.  Only one file is created even if there are multiple input files.
+  - Output file.  Only one file is created even if there are multiple input files.  If the file exists then the font data will only be injected. Any text, such as code, that is not in an injected section will be preserved.
 
 Usage examples ...
 ```
-  node index.js # Convert all ascii chars in all fonts/ svg files (recursive) and inject them into 'fonts/jscad-fonts.js' jscad file
+  node index.js # Convert all ascii chars in all svg files in the directory *fonts*(recursive) and inject the font data into the *fonts/jscad-fonts.js* file.
 
-  node index.js -l [A-Z] # Convert only uppercase letters.
+  node index.js -l [A-Z] # Same as above but convert only uppercase letters.
 
-  node index.js -m -i my-fonts -o my-fonts/out.js # Convert all svg files in my-fonts directory and put them in a module fonts/out.js.  Replace contents if exists.
+  node index.js -m -i my-fonts -o my-fonts/out.js # Convert all svg files in my-fonts directory and put them in a module fonts/out.js.  Replace injected contents if exists.
 
-  node index.js -m -i fonts/EMS/EMSSpaceRocks.svg -o jscad-fonts/EMSSpaceRocks.js # Convert one file and create a module ready to import into an jscad file 
+  node index.js -m -i fonts/EMS/afont.svg -o jscad-fonts/afont.js # Convert one file and create a module ready to import into an jscad file 
 ```
 
 The fonts are stored in an object.  Each property key is the font name taken from the id field in the svg source.  The property is the font data ready for a jscad text command.
@@ -46,9 +46,11 @@ let {width, segments} = vectorChar(
       {font:fonts.EMSSpaceRocks, xOffset:0}, 'X');
 ```
 
-Example of injected code into jscad source file.
+Example of resulting text/jscad file that had code injected. Any previously injected font code was replaced.
 
 ```
+Some text/code that will not be disturbed.
+
 //=== Fonts injected by jscad-font-gen ===
 const fonts = {
 EMSSpaceRocks:{height:500,
@@ -59,6 +61,6 @@ EMSSpaceRocks:{height:500,
 //=== End of injected fonts ===
 ```
 
-There are ems and hershey fonts in the fonts directory.  These were taken from a github repo but I can't remember which one (anyone know?).  They were originally provided for use in the hershey extension for inkscape.
+There are ems and hershey svg fonts in the fonts directory.  These were taken from a github repo but I can't remember which one (anyone know?).  They were originally provided for use in the hershey extension for inkscape.
 
 License: MIT

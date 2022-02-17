@@ -31,7 +31,7 @@ Usage examples ...
 
   node index.js -l [A-Z] # Same as above but convert only uppercase letters.
 
-  node index.js -m -i my-fonts -o my-fonts/out.js # Convert svg files in my-fonts directory and inject them in a module fonts/out.js.  If the files exists, replace any previously injected contents.
+  node index.js -m -i my-fonts -o my-fonts/out.js # Convert svg files in my-fonts directory and inject them in a module fonts/out.js.  If the file exists, replace any previously injected contents.
 
   node index.js -m -i fonts/EMS/afont.svg -o jscad-fonts/afont.js # Convert one file and create/update a module ready to import into an jscad file 
 ```

@@ -2,8 +2,8 @@ import fs        from 'fs'
 import yargs     from 'yargs'
 import {hideBin} from 'yargs/helpers'
 
-import fonts     from './fonts/jscad-fonts.js'
-console.log(fonts.EMSSpaceRocks);
+// import fonts     from './fonts/jscad-fonts.js'
+// console.log(fonts.EMSSpaceRocks);
 
 //////////  PROCESS COMMAND-LINE OPTIONS  ///////////
 const argv = yargs(hideBin(process.argv)).argv;

@@ -1,7 +1,9 @@
-import fs        from 'fs'
+import fs         from 'fs';
+import util       from 'util';
 import {getSystemErrorMap} from 'util';
-import yargs     from 'yargs'
-import {hideBin} from 'yargs/helpers'
+import yargs      from 'yargs';
+import {hideBin}  from 'yargs/helpers';
+import { Bezier } from "bezier-js";
 
 // import fonts     from './fonts/jscad-fonts.js'
 // console.log(fonts.EMSSpaceRocks);
@@ -128,7 +130,12 @@ const exec1 = (regex, str, name, dbgOk=false, dbgErr=true) => {
 const exec = (regex, str, name, dbgOk=false, dbgErr=true) => {
   const groups = regex.exec(str);
   if(groups) {
-    if(dbgOk) console.log(`${name}: "${groups}"`);
+    if(dbgOk) {
+      let str = '';
+      for(let i=1; i < groups.length; i++) 
+        str += (groups[i] === undefined ? ',' : (groups[i]) + ',');
+      console.log(`${name}: ${str.slice(0,-1)}`);
+    }
     return groups;
   }
   if(dbgErr) console.log(`Error: "${name}" missing from` +
@@ -136,24 +143,15 @@ const exec = (regex, str, name, dbgOk=false, dbgErr=true) => {
   return null;
 }
 
-// const createRegExp = (str, opts) => 
-//     new RegExp(str.raw[0].replace(/\s/gm, ""), opts || "");
-// const rePoint = createRegExp`[\s,]*? ([\d\.-]+) 
-//                              [\s,]+  ([\d\.-]+) ${'igs'}`;
-
 const reName    = new RegExp(/<font.*?id="(.+?)".*?[<>]/is);
 const reHeight  = new RegExp(/<font-face.*?cap-height="(\d*?)".*?\/>/is);
 const reGlyph   = new RegExp(/<glyph\s+?(.*?)\/>/igs);
 const reUnicode = new RegExp(/unicode="(.)"/i);
 const reHAdvX   = new RegExp(/horiz-adv-x="([\d\.]*?)"/is);
 const rePath    = new RegExp(/d="(.*?)"/igs);
-const reMoveAbs = new RegExp(/[\s,]*?M/gs);
-const reMoveRel = new RegExp(/[\s,]*?m/gs);
-const reLineAbs = new RegExp(/[\s,]*?L/gs);
-const reLineRel = new RegExp(/[\s,]*?l/gs);
-const reCurvAbs = new RegExp(/[\s,]*?C/gs);
-const reCurvRel = new RegExp(/[\s,]*?c/gs);
-const rePoint   = new RegExp(/[\s,]*?([\d\.-]+)[\s,]+([\d\.-]+)/igs);
+const rePathEle = new RegExp(
+        /[\s,]*([A-Za-z])|[\s,]*([\d\.-]+)[\s,]+([\d\.-]+)/gs);
+
 
 //////////  GENERATE OUTPUT TEXT ///////////
 
@@ -183,142 +181,60 @@ for (let fontFile of fontFiles) {
     output += `\n/* ${unicode} */ ` +
               `${unicode.charCodeAt(0).toString().padStart(3)}:`;
               
-    output += `[${exec1(reHAdvX, glyph, 'horiz-adv-x', true)},`;
+    output += `[${exec1(reHAdvX, glyph, 'horiz-adv-x', true)}, `;
 
     const path = exec1(rePath, glyph, 'path', true, false);
     if(path) {
-/*
-const reMoveAbs = new RegExp(/[\s,]*?M/igs);
-const reMoveRel = new RegExp(/[\s,]*?m/igs);
-const reLineAbs = new RegExp(/[\s,]*?L/igs);
-const reLineRel = new RegExp(/[\s,]*?l/igs);
-const reCurvAbs = new RegExp(/[\s,]*?C/gs);
-const reCurvRel = new RegExp(/[\s,]*?c/gs);
-const rePoint   = new RegExp(/[\s,]*?([\d\.-]+)[\s,]+([\d\.-]+)/igs);
-*/
-      let state = 'startPath';
-      reMoveAbs.lastIndex = 0; reMoveRel.lastIndex = 0;
-      reLineAbs.lastIndex = 0; reLineRel.lastIndex = 0;
-      reCurvAbs.lastIndex = 0; reCurvRel.lastIndex = 0;
-      rePoint  .lastIndex = 0;
-
-      let lastX = 0, lastY = 0, lastRePos = 0;;
-
-      let moveAbs = null, moveRel = null, 
-          lineAbs = null, lineRel = null, 
-          curvAbs = null, curvRel = null, 
-          point = null;  
-      while ((moveAbs = exec(reMoveAbs, path, 'moveAbs', true, false)) ||
-             (moveRel = exec(reMoveRel, path, 'moveRel', true, false)) ||
-             (lineAbs = exec(reLineAbs, path, 'lineAbs', true, false)) ||
-             (lineRel = exec(reLineRel, path, 'lineRel', true, false)) ||
-             (curvAbs = exec(reCurvAbs, path, 'curvAbs', true, false)) ||
-             (curvRel = exec(reCurvRel, path, 'curvRel', true, false)) ||
-             (point   = exec(rePoint,   path, 'point',   true)) ) {
-        if(moveAbs) {
-          rePoint.lastIndex = reMoveAbs.lastIndex;
-          if(state != 'startPath')
-            output += `, `; // double commas start segment
-          const pnt = exec(rePoint, path, 'point', true);
-          lastX = +pnt[1]; lastY = +pnt[2];
-          output += `${lastX},${lastY}, `; 
-          lastPathIdx = rePoint.lastIndex;
-          state = 'movedAbs';
-        }
-        else if(moveRel) {
-          rePoint.lastIndex = reMoveRel.lastIndex;
-          const pnt = exec(rePoint, path, 'point', true, false);
-          if(state == 'startPath') {
-            lastX  = +pnt[1]; lastY  = +pnt[2];
-          } else { 
-            output += `, `; // double commas start segment
-            lastX += +pnt[1]; lastY += +pnt[2];
+      let cmd = '', cpx = 0, cpy = 0, pathEle;
+      while ((pathEle = exec(rePathEle, path, 'pathEle', true, false))) {
+        let [,ltr,x,y] = pathEle;
+        if(ltr) {
+          if(!"MmLlCc".includes(ltr)) {
+            console.log(`Error: unsupported letter '${ltr}' ` +
+                        `in path: ${path}`);
+            process.exit();
           }
-          output += `${lastX},${lastY}, `; 
-          lastPathIdx = rePoint.lastIndex;
-          state = 'movedRel';
+          if(cmd == '') ltr = 'M';
+          else if(ltr == 'M' || ltr == 'm') 
+            output += `, `; // double commas separate segments
+          cmd = ltr;
         }
-        else if(lineAbs) {
-          rePoint.lastIndex = reLineAbs.lastIndex;
-          const pnt = exec(rePoint, path, 'point', true, false);
-          lastX = +pnt[1]; lastY = +pnt[2];
-          output += `${lastX},${lastY}, `; 
-          lastPathIdx = rePoint.lastIndex;
-          state = 'lineAbs';
-        }
-        else if(lineRel) {
-          rePoint.lastIndex = reLineRel.lastIndex;
-          const pnt = exec(rePoint, path, 'point', true, false);
-          lastX += +pnt[1]; lastY += +pnt[2];
-          output += `${lastX},${lastY}, `; 
-          lastPathIdx = rePoint.lastIndex;
-          state = 'lineRel';
-        }
-        // TODO -- handle curves
-        else if(point) {
-          if(state == 'lineAbs'){
-            lastX = +point[1]; lastY = +point[2];
-          }
-          else if(state == 'lineRel'){
-            lastX += +point[1]; lastY += +point[2];
-          }
-          output += `${lastX},${lastY}, `; 
-          lastPathIdx = rePoint.lastIndex;
-        }
-
-
-
-
-      rePoint.lastIndex  = 0;
-      reBezier.lastIndex = 0;
-      let lastX = 0;
-      let lastY = 0;
-      let point = null, bezier = null;
-      while ((point  = exec(rePoint,  path, 'point',  false, false)) ||
-             (bezier = exec(reBezier, path, 'bezier', false, false)) ) {
-        if(!point && !bezier) {
-          console.log('Error: unknown path command: ', path.slice(0,10));
-          system.exit();
-        }
-        // console.log('while: ', {point,bezier});
-        let m,x1,y1,x2,y2,x,y;
-        if(point) {
-          [,m,x,y] = point;
-          console.log('point:',{m,x,y});
-          x = parseInt(x); y = parseInt(y);
-          if(m == m.toLowerCase()){
-            m = m.toUpperCase();
-            x += lastX; y += lastY;
-          }
-          else output += `,`;
-          reBezier.lastIndex = rePoint.lastIndex;
-        } 
         else {
-          [,m,x1,y1,x2,y2,x,y] = bezier;
-          console.log('bezier:',{m,x1,y1,x2,y2,x,y});
-          x1 = parseInt(x1); y1 = parseInt(y1);
-          x2 = parseInt(x2); y2 = parseInt(y2);
-          x  = parseInt(x);  y  = parseInt(y);
-          if(m == m.toLowerCase()){
-            m = m.toUpperCase();
-            x += lastX; y += lastY;
+          // we have a point x,y at beginning of command
+          const abs = (cmd == cmd.toUpperCase());
+
+          switch(cmd.toUpperCase()) {
+
+            case 'M': case 'L': 
+              if(abs) { cpx  = +x; cpy  = +y; }
+              else    { cpx += +x; cpy += +y; }
+              console.log('ML:',{cpx,cpy});
+              output += `${cpx},${cpy}, `; 
+              break;
+
+            case 'C': 
+              let x1 = x, y1 = y;
+              let [,,x2,y2] = 
+                exec(rePathEle, path, 'pathEle x2,y2', true, false);
+              [,,x,y] = 
+                exec(rePathEle, path, 'pathEle x, y ', true, false);
+              if(abs) { x1 = +x1; y1 = +y1; 
+                        x2 = +x2; y2 = +y2; 
+                        x  = +x;  y  = +y; }
+              else    { x1 = +x1 + cpx; y1 = +y1 + cpy; 
+                        x2 = +x2 + cpx; y2 = +y2 + cpy; 
+                        x  = +x  + cpx; y  = +y  + cpy; }
+              console.log('C:',{x1,y1,x2,y2,x,y});
+
+              new Bezier(x1,y1,x2,y2,x,y).getLUT(16).forEach(p => {
+                output += `${p.x.toFixed(2)},${p.y.toFixed(2)}, `;
+              });
+              cpx = x; cpy = y;
+              break;
           }
-          else output += ` cap ,`;
-          rePoint.lastIndex = reBezier.lastIndex;
-        }// 9,30 27,71 62,71 46,0 49,-72 49,-100 
-        point = null; bezier = null;
-        lastX = x;    lastY  = y;
-        switch(m) {
-          case 'M': case 'L': output += `${x},${y},`; break;
-          case 'C': 
-            // bezier
-            output += ` bezier ${x1},${y1},  ${x2},${y2},  ${x},${y}, `; break;
+              // break;
         }
       }
-
-
-
-
       output += '],';
     }
   }

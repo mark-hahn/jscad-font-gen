@@ -9,6 +9,12 @@ const argv = yargs(hideBin(process.argv)).argv;
 // console.log({argv});
 
 const makeModule = argv.m;
+const human      = argv.h;
+
+const humanSpace = (human ? ' '    : '');
+const humanLf    = (human ? '\n'   : '');
+const humanLf2   = (human ? '\n\n' : '');
+
 
 let lettersRegex = argv.l;
 if(lettersRegex === true) {
@@ -152,12 +158,7 @@ const rePathEle = new RegExp(
 
 //////////  GENERATE OUTPUT TEXT ///////////
 
-const INJECTED_TEXT_INTRO = 
-  '\n//=== Fonts injected by jscad-font-gen ===\n';
-const INJECTED_TEXT_OUTRO = 
-  '//=== End of injected fonts ===\n';
-
-let output = INJECTED_TEXT_INTRO + 'const fonts = {'
+let output = 'const fonts = {'
 
 for (let fontFile of fontFiles) { 
   console.log(`Processing ${fontFile} ...`);
@@ -165,7 +166,8 @@ for (let fontFile of fontFiles) {
 
   const name   = exec1(reName,   svg, 'font-name', true)?.replace(/\s/g, '');;
   const height = exec1(reHeight, svg, 'height');
-  output += `"${name}":{height:${height},`;
+
+  output += `\n"${name}":{height:${height},`;
 
   let glyph;
   while (glyph = exec1(reGlyph, svg, 'glyph', false, false)) {
@@ -175,8 +177,12 @@ for (let fontFile of fontFiles) {
 
     // console.log(`\n---- Processing char ${unicode} ----`);
 
-    output += `\n\n/* ${unicode} */ ${unicode.charCodeAt(0)}:` +
-              `[${exec1(reHAdvX, glyph, 'horiz-adv-x', false, true)}, `;
+    if(human)
+      output += `\n\n/* ${unicode} */ ${unicode.charCodeAt(0)}:` +
+                `[${exec1(reHAdvX, glyph, 'horiz-adv-x', false, true)}, `;
+    else
+      output += `${unicode.charCodeAt(0)}:` +
+                `[${exec1(reHAdvX, glyph, 'horiz-adv-x', false, true)},`;
 
     const path = exec1(rePath, glyph, 'path', false, true);
     if(path) {
@@ -191,7 +197,7 @@ for (let fontFile of fontFiles) {
           }
           if(cmd == '') ltr = 'M';
           else if(ltr == 'M' || ltr == 'm') 
-            output += `, `; // double commas separate segments
+            output += `,${humanSpace}`; // new segment
           cmd = ltr;
         }
         else {
@@ -204,7 +210,7 @@ for (let fontFile of fontFiles) {
               if(abs) { cpx  = +x; cpy  = +y; }
               else    { cpx += +x; cpy += +y; }
               // console.log('ML:',{cpx,cpy});
-              output += `${cpx},${cpy}, `; 
+              output += `${cpx},${cpy},${humanSpace}`; 
               break;
 
             case 'C': 
@@ -222,7 +228,8 @@ for (let fontFile of fontFiles) {
               // console.log('C:',{x1,y1,x2,y2,x,y});
 
               new Bezier(x1,y1,x2,y2,x,y).getLUT(10).forEach(p => {
-                output += `${p.x.toFixed(2)},${p.y.toFixed(2)}, `;
+                output += `${p.x.toFixed(2)},${p.y.toFixed(2)},` +
+                          `${humanSpace}`;
               });
               cpx = x; cpy = y;
               break;
@@ -232,13 +239,18 @@ for (let fontFile of fontFiles) {
     }
     output += '],';
   }
-  output += '},\n';
+  output += `},${humanLf}`;
 }
-output += '}\n';
+output += `},${humanLf}`;
 
-if(makeModule) output += '\nexport default fonts;\n\n'
+if(makeModule) output += `\nexport default fonts;${humanLf}\n`
 
-output += INJECTED_TEXT_OUTRO;
+const INJECTED_TEXT_INTRO = 
+  '\n//=== Fonts injected by jscad-font-gen ===\n';
+const INJECTED_TEXT_OUTRO = 
+  '\n//=== End of injected fonts ===\n';
+
+output = INJECTED_TEXT_INTRO + output + INJECTED_TEXT_OUTRO;
 
 let fileOut = '';
 if(!makeModule) 

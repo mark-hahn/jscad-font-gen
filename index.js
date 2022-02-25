@@ -178,15 +178,15 @@ for (let fontFile of fontFiles) {
     const unicode = exec1(reUnicode, glyph, 'unicode',false,false);
     if(!unicode || !reLetters.test(unicode)) continue;
 
-    console.log(`\n---- Processing char ${unicode} ----`);
+    // console.log(`\n---- Processing char ${unicode} ----`);
 
     output += `\n\n/* ${unicode} */ ${unicode.charCodeAt(0)}:` +
-              `[${exec1(reHAdvX, glyph, 'horiz-adv-x', true)}, `;
+              `[${exec1(reHAdvX, glyph, 'horiz-adv-x', false, true)}, `;
 
-    const path = exec1(rePath, glyph, 'path', true, false);
+    const path = exec1(rePath, glyph, 'path', false, true);
     if(path) {
       let cmd = '', cpx = 0, cpy = 0, pathEle;
-      while ((pathEle = exec(rePathEle, path, 'pathEle', true, false))) {
+      while ((pathEle = exec(rePathEle, path, 'pathEle', false, false))) {
         let [,ltr,x,y] = pathEle;
         if(ltr) {
           if(!"MmLlCc".includes(ltr)) {
@@ -208,23 +208,23 @@ for (let fontFile of fontFiles) {
             case 'M': case 'L': 
               if(abs) { cpx  = +x; cpy  = +y; }
               else    { cpx += +x; cpy += +y; }
-              console.log('ML:',{cpx,cpy});
+              // console.log('ML:',{cpx,cpy});
               output += `${cpx},${cpy}, `; 
               break;
 
             case 'C': 
               let x1 = x, y1 = y;
               let [,,x2,y2] = 
-                exec(rePathEle, path, 'pathEle x2,y2', true, true);
+                exec(rePathEle, path, 'pathEle x2,y2', false, true);
               [,,x,y] = 
-                exec(rePathEle, path, 'pathEle x, y ', true, true);
+                exec(rePathEle, path, 'pathEle x, y ', false, true);
               if(abs) { x1 = +x1; y1 = +y1; 
                         x2 = +x2; y2 = +y2; 
                         x  = +x;  y  = +y; }
               else    { x1 = +x1 + cpx; y1 = +y1 + cpy; 
                         x2 = +x2 + cpx; y2 = +y2 + cpy; 
                         x  = +x  + cpx; y  = +y  + cpy; }
-              console.log('C:',{x1,y1,x2,y2,x,y});
+              // console.log('C:',{x1,y1,x2,y2,x,y});
 
               new Bezier(x1,y1,x2,y2,x,y).getLUT(8).forEach(p => {
                 output += `${p.x.toFixed(2)},${p.y.toFixed(2)}, `;
@@ -237,7 +237,6 @@ for (let fontFile of fontFiles) {
     }
     output += '],';
   }
-  // if(cpx == 0) output += '],';
   output += '},\n';
 }
 output += '}\n';

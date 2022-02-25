@@ -3,9 +3,6 @@ import yargs      from 'yargs';
 import {hideBin}  from 'yargs/helpers';
 import { Bezier } from "bezier-js";
 
-// import fonts     from './fonts/jscad-fonts.js'
-// console.log(fonts.EMSSpaceRocks);
-
 
 //////////  COMMAND-LINE OPTIONS  ///////////
 const argv = yargs(hideBin(process.argv)).argv;
@@ -224,7 +221,7 @@ for (let fontFile of fontFiles) {
                         x  = +x  + cpx; y  = +y  + cpy; }
               // console.log('C:',{x1,y1,x2,y2,x,y});
 
-              new Bezier(x1,y1,x2,y2,x,y).getLUT(8).forEach(p => {
+              new Bezier(x1,y1,x2,y2,x,y).getLUT(10).forEach(p => {
                 output += `${p.x.toFixed(2)},${p.y.toFixed(2)}, `;
               });
               cpx = x; cpy = y;

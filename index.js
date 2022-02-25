@@ -1,6 +1,4 @@
 import fs         from 'fs';
-import util       from 'util';
-import {getSystemErrorMap} from 'util';
 import yargs      from 'yargs';
 import {hideBin}  from 'yargs/helpers';
 import { Bezier } from "bezier-js";

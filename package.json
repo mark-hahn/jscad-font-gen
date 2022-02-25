@@ -11,9 +11,6 @@
   "type": "module",
   "dependencies": {
     "bezier-js": "^6.1.0",
-    "hast": "^1.0.0",
-    "node-dir": "^0.1.17",
-    "svg-parser": "^2.0.4",
     "yargs": "^17.3.1"
   }
 }

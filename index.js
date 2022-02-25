@@ -8,7 +8,8 @@ import { Bezier } from "bezier-js";
 // import fonts     from './fonts/jscad-fonts.js'
 // console.log(fonts.EMSSpaceRocks);
 
-//////////  PROCESS COMMAND-LINE OPTIONS  ///////////
+
+//////////  COMMAND-LINE OPTIONS  ///////////
 const argv = yargs(hideBin(process.argv)).argv;
 // console.log({argv});
 
@@ -70,7 +71,8 @@ console.log(`Using:`+
           `\n  Input:  ${inputFile}` +
           `\n  Output  ${outputFile}`);
 
-//////////////  FIND FILE PATHS  //////////////
+
+//////////////  FILE PATHS  //////////////
 
 let fontFiles = [];
 const walkDir = function(dir) {
@@ -107,30 +109,30 @@ if(fontFiles.length == 0) {
   process.exit();
 }
 
-//////////  REGEX UTILITIES  ///////////
+//////////  REGEX  ///////////
 
-const exec1 = (regex, str, name, dbgOk=false, dbgErr=true) => {
+const exec1 = (regex, str, name, debug=false, required=true) => {
   const groups = regex.exec(str);
   if(groups) {
     if(!groups[1]) {
-      if(dbgErr) console.log(`Error: "${name}" missing group[1]: ${{groups}}`);
+      if(required) console.log(`Error: "${name}" missing group[1]: ${{groups}}`);
       return null;
     }
     if(groups[2]) {
-      if(dbgErr) console.log(`Error: "${name}" has too many groups: ${{groups}}`);
+      if(required) console.log(`Error: "${name}" has too many groups: ${{groups}}`);
       return null;
     }
-    if(dbgOk) console.log(`${name}: "${groups[1]}"`);
+    if(debug) console.log(`${name}: "${groups[1]}"`);
     return groups[1];
   }
-  if(dbgErr) console.log(`Error: "${name}" missing regex ${regex} from ` +
+  if(required) console.log(`Error: "${name}" missing regex ${regex} from ` +
               `${str.slice(0,80)} ${str.length > 80 ? ' ...' : ''}`);
   return null;
 }
-const exec = (regex, str, name, dbgOk=false, dbgErr=true) => {
+const exec = (regex, str, name, debug=false, required=true) => {
   const groups = regex.exec(str);
   if(groups) {
-    if(dbgOk) {
+    if(debug) {
       let str = '';
       for(let i=1; i < groups.length; i++) 
         str += (groups[i] === undefined ? ',' : (groups[i]) + ',');
@@ -138,7 +140,7 @@ const exec = (regex, str, name, dbgOk=false, dbgErr=true) => {
     }
     return groups;
   }
-  if(dbgErr) console.log(`Error: "${name}" missing from` +
+  if(required) console.log(`Error: "${name}" missing from` +
               `${str.slice(0,80)} ${str.length > 80 ? ' ...' : ''}`);
   return null;
 }
@@ -148,7 +150,7 @@ const reHeight  = new RegExp(/<font-face.*?cap-height="(\d*?)".*?\/>/is);
 const reGlyph   = new RegExp(/<glyph\s+?(.*?)\/>/igs);
 const reUnicode = new RegExp(/unicode="(.)"/i);
 const reHAdvX   = new RegExp(/horiz-adv-x="([\d\.]*?)"/is);
-const rePath    = new RegExp(/d="(.*?)"/igs);
+const rePath    = new RegExp(/d="(.*?)"/is);
 const rePathEle = new RegExp(
         /[\s,]*([A-Za-z])|[\s,]*([\d\.-]+)[\s,]+([\d\.-]+)/gs);
 
@@ -178,10 +180,8 @@ for (let fontFile of fontFiles) {
 
     console.log(`\n---- Processing char ${unicode} ----`);
 
-    output += `\n/* ${unicode} */ ` +
-              `${unicode.charCodeAt(0).toString().padStart(3)}:`;
-              
-    output += `[${exec1(reHAdvX, glyph, 'horiz-adv-x', true)}, `;
+    output += `\n\n/* ${unicode} */ ${unicode.charCodeAt(0)}:` +
+              `[${exec1(reHAdvX, glyph, 'horiz-adv-x', true)}, `;
 
     const path = exec1(rePath, glyph, 'path', true, false);
     if(path) {
@@ -215,9 +215,9 @@ for (let fontFile of fontFiles) {
             case 'C': 
               let x1 = x, y1 = y;
               let [,,x2,y2] = 
-                exec(rePathEle, path, 'pathEle x2,y2', true, false);
+                exec(rePathEle, path, 'pathEle x2,y2', true, true);
               [,,x,y] = 
-                exec(rePathEle, path, 'pathEle x, y ', true, false);
+                exec(rePathEle, path, 'pathEle x, y ', true, true);
               if(abs) { x1 = +x1; y1 = +y1; 
                         x2 = +x2; y2 = +y2; 
                         x  = +x;  y  = +y; }
@@ -226,18 +226,18 @@ for (let fontFile of fontFiles) {
                         x  = +x  + cpx; y  = +y  + cpy; }
               console.log('C:',{x1,y1,x2,y2,x,y});
 
-              new Bezier(x1,y1,x2,y2,x,y).getLUT(16).forEach(p => {
+              new Bezier(x1,y1,x2,y2,x,y).getLUT(8).forEach(p => {
                 output += `${p.x.toFixed(2)},${p.y.toFixed(2)}, `;
               });
               cpx = x; cpy = y;
               break;
           }
-              // break;
         }
       }
-      output += '],';
     }
+    output += '],';
   }
+  // if(cpx == 0) output += '],';
   output += '},\n';
 }
 output += '}\n';

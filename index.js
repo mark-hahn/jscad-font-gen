@@ -9,6 +9,11 @@ const argv = yargs(hideBin(process.argv)).argv;
 // console.log({argv});
 
 const makeModule = argv.m;
+const human      = argv.h;
+
+const humanSpace = (human ? ' '    : '');
+const humanLf    = (human ? '\n'   : '');
+const humanLf2   = (human ? '\n\n' : '');
 
 let lettersRegex = argv.l;
 if(lettersRegex === true) {
@@ -78,7 +83,8 @@ const walkDir = function(dir) {
     if (stat && stat.isDirectory()) { 
       fontFiles = fontFiles.concat(walkDir(file));
     } else { 
-      if(file && file.endsWith('.svg')) fontFiles.push(file);
+      if(file?.endsWith('.svg') || file?.endsWith('.js')) 
+        fontFiles.push(file);
     }
   });
 }
@@ -92,9 +98,10 @@ else if(fs.lstatSync(inputFile).isDirectory()) {
   walkDir(inputFile);
 }
 else {
-  if(inputFile?.endsWith('.svg')) fontFiles = [inputFile];
+  if(inputFile?.endsWith('.svg') ||
+     inputFile?.endsWith('.js') ) fontFiles = [inputFile];
   else {
-    console.log(`Error: ${inputFile} is not an.svg file`);
+    console.log(`Error: ${inputFile} is not an.svg or .js file`);
     process.exit();
   }
 }
@@ -152,101 +159,149 @@ const rePathEle = new RegExp(
 
 //////////  GENERATE OUTPUT TEXT ///////////
 
-const INJECTED_TEXT_INTRO = 
-  '\n//=== Fonts injected by jscad-font-gen ===\n';
-const INJECTED_TEXT_OUTRO = 
-  '//=== End of injected fonts ===\n';
+let output = 'const fonts = {'
 
-let output = INJECTED_TEXT_INTRO + 'const fonts = {'
+for (let fileName of fontFiles) { 
+  console.log(`Processing ${fileName} ...`);
 
-for (let fontFile of fontFiles) { 
-  console.log(`Processing ${fontFile} ...`);
-  const svg = fs.readFileSync(fontFile).toString();
+  if(fileName.endsWith('.svg')) {
+    const svg = fs.readFileSync(fileName).toString();
 
-  const name   = exec1(reName,   svg, 'font-name', true)?.replace(/\s/g, '');;
-  const height = exec1(reHeight, svg, 'height');
-  output += `"${name}":{height:${height},`;
+    const fontName = exec1(reName,   svg, 'font-name', true)?.replace(/\s/g, '');;
+    const height   = exec1(reHeight, svg, 'height');
 
-  let glyph;
-  while (glyph = exec1(reGlyph, svg, 'glyph', false, false)) {
+    output += `\n"${fontName}":{height:${height},`;
 
-    const unicode = exec1(reUnicode, glyph, 'unicode',false,false);
-    if(!unicode || !reLetters.test(unicode)) continue;
+    let glyph;
+    while (glyph = exec1(reGlyph, svg, 'glyph', false, false)) {
 
-    // console.log(`\n---- Processing char ${unicode} ----`);
+      const unicode = exec1(reUnicode, glyph, 'unicode',false,false);
+      if(!unicode || !reLetters.test(unicode)) continue;
 
-    output += `\n\n/* ${unicode} */ ${unicode.charCodeAt(0)}:` +
-              `[${exec1(reHAdvX, glyph, 'horiz-adv-x', false, true)}, `;
+      // console.log(`\n---- Processing char ${unicode} ----`);
 
-    const path = exec1(rePath, glyph, 'path', false, true);
-    if(path) {
-      let cmd = '', cpx = 0, cpy = 0, pathEle;
-      while ((pathEle = exec(rePathEle, path, 'pathEle', false, false))) {
-        let [,ltr,x,y] = pathEle;
-        if(ltr) {
-          if(!"MmLlCc".includes(ltr)) {
-            console.log(`Error: unsupported letter '${ltr}' ` +
-                        `in path: ${path}`);
-            process.exit();
+      if(human)
+        output += `\n\n/* ${unicode} */ ${unicode.charCodeAt(0)}:` +
+                  `[${exec1(reHAdvX, glyph, 'horiz-adv-x', false, true)}, `;
+      else
+        output += `${unicode.charCodeAt(0)}:` +
+                  `[${exec1(reHAdvX, glyph, 'horiz-adv-x', false, true)},`;
+
+      const path = exec1(rePath, glyph, 'path', false, true);
+      if(path) {
+        let cmd = '', cpx = 0, cpy = 0, pathEle;
+        while ((pathEle = exec(rePathEle, path, 'pathEle', false, false))) {
+          let [,ltr,x,y] = pathEle;
+          if(ltr) {
+            if(!"MmLlCc".includes(ltr)) {
+              console.log(`Error: unsupported letter '${ltr}' ` +
+                          `in path: ${path}`);
+              process.exit();
+            }
+            if(cmd == '') ltr = 'M';
+            else if(ltr == 'M' || ltr == 'm') 
+              output += `,${humanSpace}`; // new segment
+            cmd = ltr;
           }
-          if(cmd == '') ltr = 'M';
-          else if(ltr == 'M' || ltr == 'm') 
-            output += `, `; // double commas separate segments
-          cmd = ltr;
-        }
-        else {
-          // we have a point x,y at beginning of command
-          const abs = (cmd == cmd.toUpperCase());
+          else {
+            // we have a point x,y at beginning of command
+            const abs = (cmd == cmd.toUpperCase());
 
-          switch(cmd.toUpperCase()) {
+            switch(cmd.toUpperCase()) {
 
-            case 'M': case 'L': 
-              if(abs) { cpx  = +x; cpy  = +y; }
-              else    { cpx += +x; cpy += +y; }
-              // console.log('ML:',{cpx,cpy});
-              output += `${cpx},${cpy}, `; 
-              break;
+              case 'M': case 'L': 
+                if(abs) { cpx  = +x; cpy  = +y; }
+                else    { cpx += +x; cpy += +y; }
+                // console.log('ML:',{cpx,cpy});
+                output += `${cpx},${cpy},${humanSpace}`; 
+                break;
 
-            case 'C': 
-              let x1 = x, y1 = y;
-              let [,,x2,y2] = 
-                exec(rePathEle, path, 'pathEle x2,y2', false, true);
-              [,,x,y] = 
-                exec(rePathEle, path, 'pathEle x, y ', false, true);
-              if(abs) { x1 = +x1; y1 = +y1; 
-                        x2 = +x2; y2 = +y2; 
-                        x  = +x;  y  = +y; }
-              else    { x1 = +x1 + cpx; y1 = +y1 + cpy; 
-                        x2 = +x2 + cpx; y2 = +y2 + cpy; 
-                        x  = +x  + cpx; y  = +y  + cpy; }
-              // console.log('C:',{x1,y1,x2,y2,x,y});
+              case 'C': 
+                let x1 = x, y1 = y;
+                let [,,x2,y2] = 
+                  exec(rePathEle, path, 'pathEle x2,y2', false, true);
+                [,,x,y] = 
+                  exec(rePathEle, path, 'pathEle x, y ', false, true);
+                if(abs) { x1 = +x1; y1 = +y1; 
+                          x2 = +x2; y2 = +y2; 
+                          x  = +x;  y  = +y; }
+                else    { x1 = +x1 + cpx; y1 = +y1 + cpy; 
+                          x2 = +x2 + cpx; y2 = +y2 + cpy; 
+                          x  = +x  + cpx; y  = +y  + cpy; }
+                // console.log('C:',{x1,y1,x2,y2,x,y});
 
-              new Bezier(x1,y1,x2,y2,x,y).getLUT(10).forEach(p => {
-                output += `${p.x.toFixed(2)},${p.y.toFixed(2)}, `;
-              });
-              cpx = x; cpy = y;
-              break;
+                new Bezier(x1,y1,x2,y2,x,y).getLUT(10).forEach(p => {
+                  output += `${p.x.toFixed(2)},${p.y.toFixed(2)},` +
+                            `${humanSpace}`;
+                });
+                cpx = x; cpy = y;
+                break;
+            }
           }
         }
       }
+      output += '],';
     }
-    output += '],';
   }
-  output += '},\n';
+  else if(fileName.endsWith('.js')) {
+    const js = fs.readFileSync(fileName).toString();
+    const groups = /(\w*?)\s*=\s*(.*?\})/gs.exec(js);
+    if(!groups) {
+      console.log(`Error: no font data found in vector file ${fileName}`);
+      process.exit();
+    }
+    let [,fontName, objStr] = groups;
+
+    objStr = objStr.replace(/(\w+)\:/gs,'"$1":');
+    objStr = objStr.replace(/,\s*]/gs, ']');
+    objStr = objStr.replace(/,\s*}/gs, '}');
+    objStr = objStr.replace(/,\s*,/gs, ',null,');
+    console.log(`objStr: ${objStr.slice(0,100)}`);
+    let fontData = {};
+    try {
+      fontData = JSON.parse(objStr);
+    } catch (e) {
+      console.log(`Error: parsing font data JSON failed: ${e}`);
+      process.exit();
+    }
+    output += `\n"${fontName}":{height:${fontData.height},`;
+
+    for(let i=0; i<128; i++) {
+      const path = fontData[i];
+      let charStr;
+      if(path === undefined ||
+        !(reLetters.test((charStr = String.fromCharCode(i)))))
+        continue;
+      console.log(`---- Processing char ${charStr} ----`);
+      const pathStr = JSON.stringify(path).replace('null','');
+      if(human)
+        output += `\n/* ${charStr} */ ${i}: ${pathStr},\n`;
+      else
+        output += `${i}:${pathStr},`;
+    }
+  }
+  output += `},${humanLf}`;
 }
-output += '}\n';
+output += `};${humanLf}`;
 
-if(makeModule) output += '\nexport default fonts;\n\n'
+if(human) {
+  output = output.replace(/,(\d+,\d+)/gs,', $1');
+  output = output.replace(/,,/g, ',\n/* segment */,');
+}
 
-output += INJECTED_TEXT_OUTRO;
+if(makeModule) output += `\nexport default fonts;${humanLf2}`
 
-let fileOut = '';
-if(!makeModule) 
-  fileOut = fs.readFileSync(outputFile).toString();
+const INJECTED_TEXT_INTRO = 
+  '\n//=== Fonts injected by jscad-font-gen ===\n';
+const INJECTED_TEXT_OUTRO = 
+  '\n//=== End of injected fonts ===\n';
+
+output = INJECTED_TEXT_INTRO + output + INJECTED_TEXT_OUTRO;
 
 const reInjectionStr = INJECTED_TEXT_INTRO + 
                 '.*' + INJECTED_TEXT_OUTRO;
 
+let fileOut = fs.readFileSync(outputFile).toString();
 const reInjection = new RegExp(reInjectionStr,'igs');
 fileOut = fileOut.replace(reInjection,'');
 fileOut += output;

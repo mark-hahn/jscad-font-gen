@@ -10,14 +10,14 @@ It can also include existing jscad font data modules in the output.  This featur
 
 jscad-font-gen outputs one or multiple files into a single output file.  So multiple files can be included in the jscad code with one import statement. The files included can be a mix of svg fonts and vector fonts.
 
-Installation ...
+### Installation ...
 ```
 git clone git@github.com:mark-hahn/jscad-font-gen.git
 cd jscad-font-gen
 npm i
 ```
 
-Command-line options
+### Command-line options ...
 * -l regex  
 
   - Limit letters to ones that match the regex.
@@ -36,7 +36,7 @@ Command-line options
 * -o output-path.js
   - Output file.  Only one file is created even if there are multiple input files.  If the file exists then the font data will only be injected. Any text, such as code, that is not in the injected section will be preserved.
 
-Usage examples ...
+### Usage examples ...
 ```
   node index.js # Convert all ascii chars in all svg and vector files in the directory *fonts* (recursive) and inject the font data into the *fonts/jscad-fonts.js* file.
 
@@ -47,16 +47,18 @@ Usage examples ...
   node index.js -mh -i fonts/EMS/afont.svg -o jscad-fonts/afont.js # Convert one file and create/update a module ready to import into an jscad file.  The vector data in the resulting module will be human-readable.
 ```
 
+### Output format ...
 The fonts are stored in an object.  Each property key is the font name taken from the id field in an svg font file or the export name in a vector data module.  The property for each key is the font data ready for a jscad text command.
 
-Source example ...
+### Source example ...
 ```
 import fonts from './fonts/jscad-fonts.js';
 let {width, segments} = vectorChar(
       {font:fonts.EMSSpaceRocks, xOffset:0}, 'X');
 ```
 
-Example of resulting text/jscad file that had code injected. Any previously injected font code was replaced. The output shown has the `-h` human-readable option set.
+###  Ouput example ...
+Resulting text/jscad file that had code injected. Any previously injected font code was replaced. The output shown has the `-h` human-readable option set.
 
 ```
 Some text/code that will not be disturbed.
@@ -73,6 +75,7 @@ const fonts = {
 //=== End of injected fonts ===
 ```
 
+### Sample fonts ...
 There are ems and hershey svg fonts in the fonts directory.  The svg fonts were taken from a github repo but I can't remember which one (anyone know?).  They were originally provided for use in the hershey extension for inkscape.
 
 There are also vector fonts taken from the repo skarab42/jscad-vector-fonts.

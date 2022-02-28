@@ -200,8 +200,9 @@ for (let fileName of fontFiles) {
                           `in path: ${path}`);
               process.exit();
             }
-            if(ltr == 'M' || ltr == 'm')  
+            if(!firstMove && (ltr == 'M' || ltr == 'm'))  
               // move command starts new segment
+              // but don't add extra comma at beginning
               output += `,${humanSpace}`; 
             cmd = ltr;
           }

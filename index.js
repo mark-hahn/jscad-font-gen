@@ -189,30 +189,32 @@ for (let fileName of fontFiles) {
 
       const path = exec1(rePath, glyph, 'path', false, true);
       if(path) {
+        let firstMove = true;
         let cmd = '', cpx = 0, cpy = 0, pathEle;
         while ((pathEle = exec(rePathEle, path, 'pathEle', false, false))) {
           let [,ltr,x,y] = pathEle;
           if(ltr) {
+            // we have a letter, ltr (beginning of command)
             if(!"MmLlCc".includes(ltr)) {
               console.log(`Error: unsupported letter '${ltr}' ` +
                           `in path: ${path}`);
               process.exit();
             }
-            if(cmd == '') ltr = 'M';
-            else if(ltr == 'M' || ltr == 'm') 
-              output += `,${humanSpace}`; // new segment
+            if(ltr == 'M' || ltr == 'm')  
+              // move command starts new segment
+              output += `,${humanSpace}`; 
             cmd = ltr;
           }
           else {
-            // we have a point x,y at beginning of command
-            const abs = (cmd == cmd.toUpperCase());
+            // we have a point x,y, check if absolute
+            const abs = (cmd == cmd.toUpperCase() || firstMove);
+            firstMove = false;
 
             switch(cmd.toUpperCase()) {
 
               case 'M': case 'L': 
                 if(abs) { cpx  = +x; cpy  = +y; }
                 else    { cpx += +x; cpy += +y; }
-                // console.log('ML:',{cpx,cpy});
                 output += `${cpx},${cpy},${humanSpace}`; 
                 break;
 
@@ -222,18 +224,18 @@ for (let fileName of fontFiles) {
                   exec(rePathEle, path, 'pathEle x2,y2', false, true);
                 [,,x,y] = 
                   exec(rePathEle, path, 'pathEle x, y ', false, true);
-                if(abs) { x1 = +x1; y1 = +y1; 
-                          x2 = +x2; y2 = +y2; 
-                          x  = +x;  y  = +y; }
-                else    { x1 = +x1 + cpx; y1 = +y1 + cpy; 
-                          x2 = +x2 + cpx; y2 = +y2 + cpy; 
-                          x  = +x  + cpx; y  = +y  + cpy; }
-                // console.log('C:',{x1,y1,x2,y2,x,y});
+                if(abs) { x1 = +x1;  y1 = +y1; 
+                          x2 = +x2;  y2 = +y2; 
+                          x  = +x;   y  = +y; }
+                else    { x1 = +x1 + cpx;  y1 = +y1 + cpy; 
+                          x2 = +x2 + cpx;  y2 = +y2 + cpy; 
+                          x  = +x  + cpx;  y  = +y  + cpy; }
 
                 new Bezier(x1,y1,x2,y2,x,y).getLUT(10).forEach(p => {
                   output += `${p.x.toFixed(2)},${p.y.toFixed(2)},` +
                             `${humanSpace}`;
                 });
+
                 cpx = x; cpy = y;
                 break;
             }
@@ -273,7 +275,7 @@ for (let fileName of fontFiles) {
         !(reLetters.test((charStr = String.fromCharCode(i)))))
         continue;
       console.log(`---- Processing char ${charStr} ----`);
-      const pathStr = JSON.stringify(path).replace('null','');
+      const pathStr = JSON.stringify(path).replace(/null/g,'');
       if(human)
         output += `\n/* ${charStr} */ ${i}: ${pathStr},\n`;
       else

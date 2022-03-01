@@ -2,7 +2,7 @@
 
 jscad-font-gen is a node-based utility to convert single-line SVG font files to a jscad vector font data file (and more). 
 
-I prefer SVG font files over `.ttf` files because they are a standard and widely available. I've personally found "single-line" `.ttf` files to be a kludge with paths being retraced needlessly or open-path paths being closed and screwing things up.  The one disadvantage I've found is that the fonts tend to be commercial and expensive ($5 to $20 each).
+I prefer SVG font files over `.ttf` files because they are a standard and widely available. I've personally found "single-line" `.ttf` files to be a kludge with paths being retraced needlessly or open-path paths being closed and screwing things up. 
 
 jscad-font-gen can create modules for importing or it can inject the font data directly into a jscad file.  The injection can be done without blowing out the size of the file since only letters needed are included.
 

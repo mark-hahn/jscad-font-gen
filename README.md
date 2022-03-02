@@ -76,7 +76,7 @@ const fonts = {
 ```
 
 ### Sample fonts ...
-There are a 89 sample fonts in the fonts directory.
+There are a 73 sample fonts in the fonts directory.
 
 * The SVG fonts in the EMS and Hershey directories were taken from a github repo but I can't remember which one (anyone know?).  They were originally provided for use in the hershey extension for inkscape.
 

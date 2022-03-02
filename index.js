@@ -196,11 +196,13 @@ for (let fileName of fontFiles) {
           let [,ltr,x,y] = pathEle;
           if(ltr) {
             // we have a letter, ltr (beginning of command)
-            if(!"MmLlCc".includes(ltr)) {
+            if(!"MmLlCcZz".includes(ltr)) {
               console.log(`Error: unsupported letter '${ltr}' ` +
                           `in path: ${path}`);
               process.exit();
             }
+            // Z closes path -- ignore it
+            if(ltr == 'Z') continue;
             if(!firstMove && (ltr == 'M' || ltr == 'm'))  
               // move command starts new segment
               // but don't add extra comma at beginning

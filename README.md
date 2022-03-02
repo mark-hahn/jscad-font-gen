@@ -76,8 +76,12 @@ const fonts = {
 ```
 
 ### Sample fonts ...
-There are ems and hershey svg fonts in the fonts directory.  The svg fonts were taken from a github repo but I can't remember which one (anyone know?).  They were originally provided for use in the hershey extension for inkscape.
+There are a 89 sample fonts in the fonts directory.
 
-There are also vector fonts taken from the repo skarab42/jscad-vector-fonts.
+* The SVG fonts in the EMS and Hershey directories were taken from a github repo but I can't remember which one (anyone know?).  They were originally provided for use in the hershey extension for inkscape.
+
+* The SVG fonts in the strokefontdata directory came from `Shriinivas/inkscapestrokefont`.
+
+* There are also vector (`.js`) fonts taken from the repo `skarab42/jscad-vector-fonts`.
 
 License: MIT

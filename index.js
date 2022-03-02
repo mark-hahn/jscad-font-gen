@@ -146,9 +146,10 @@ const exec = (regex, str, name, debug=false, required=true) => {
               `${str.slice(0,80)} ${str.length > 80 ? ' ...' : ''}`);
   return null;
 }
+// <font-face ascent="800.0" cap-height="500.0" 
 
 const reName    = new RegExp(/<font.*?id="(.+?)".*?[<>]/is);
-const reHeight  = new RegExp(/<font-face.*?cap-height="(\d*?)".*?\/>/is);
+const reHeight  = new RegExp(/<font-face.*?cap-height="([\d.]*?)".*?\/>/is);
 const reGlyph   = new RegExp(/<glyph\s+?(.*?)\/>/igs);
 const reUnicode = new RegExp(/unicode="(.)"/i);
 const reHAdvX   = new RegExp(/horiz-adv-x="([\d\.]*?)"/is);

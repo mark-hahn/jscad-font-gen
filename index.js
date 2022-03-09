@@ -234,8 +234,9 @@ for (let fileName of fontFiles) {
                 else    { x1 = +x1 + cpx;  y1 = +y1 + cpy; 
                           x2 = +x2 + cpx;  y2 = +y2 + cpy; 
                           x  = +x  + cpx;  y  = +y  + cpy; }
-
-                new Bezier(x1,y1,x2,y2,x,y).getLUT(10).forEach(p => {
+                const bez = new Bezier(cpx,cpy,x1,y1,x2,y2,x,y)
+                const lut = bez.getLUT(16)
+                lut.forEach(p => {
                   output += `${p.x.toFixed(2)},${p.y.toFixed(2)},` +
                             `${humanSpace}`;
                 });

@@ -235,10 +235,10 @@ for (let fileName of fontFiles) {
                           x2 = +x2 + cpx;  y2 = +y2 + cpy; 
                           x  = +x  + cpx;  y  = +y  + cpy; }
                 const bez = new Bezier(cpx,cpy,x1,y1,x2,y2,x,y)
-                const lut = bez.getLUT(16)
-                lut.forEach(p => {
-                  output += `${p.x.toFixed(2)},${p.y.toFixed(2)},` +
-                            `${humanSpace}`;
+                const lut = bez.getLUT(8)
+                lut.forEach((p,i) => {
+                  if(i > 0) output += 
+                    `${p.x.toFixed(2)},${p.y.toFixed(2)},` + humanSpace;
                 });
 
                 cpx = x; cpy = y;

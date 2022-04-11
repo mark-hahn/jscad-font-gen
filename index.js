@@ -364,7 +364,7 @@ output = INJECTED_TEXT_INTRO + output + INJECTED_TEXT_OUTRO;
 const reInjectionStr = INJECTED_TEXT_INTRO + 
                 '.*' + INJECTED_TEXT_OUTRO;
 
-let fileOut = fs.readFileSync(outputFile).toString();
+let fileOut = (makeModule ? '' : fs.readFileSync(outputFile).toString());
 const reInjection = new RegExp(reInjectionStr,'igs');
 fileOut = fileOut.replace(reInjection,'');
 fileOut += output;

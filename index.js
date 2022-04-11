@@ -195,6 +195,7 @@ for (let fileName of fontFiles) {
 
         let lastCmd = ''; // required for "T" or "t" commands
         let x1,y1, x2,y2; // dto.
+        let firstX,firstY; // first x,y of a segment - used by "Z" or "z"
         while ((pathEle = exec(rePathEle, path, 'pathEle', false, false))) {
           let [,ltr,x,y] = pathEle;
           if(ltr) {
@@ -204,8 +205,14 @@ for (let fileName of fontFiles) {
                           `in path: ${path}`);
               process.exit();
             }
-            // Z closes path -- ignore it
-            if(ltr == 'Z') continue;
+
+            // Z closes path
+            if ((ltr == 'Z') || (ltr === 'z')) {
+              output += `${firstX},${firstY},${humanSpace}`; 
+              continue;
+            }
+
+
             if(!firstMove && (ltr == 'M' || ltr == 'm'))  
               // move command starts new segment
               // but don't add extra comma at beginning
@@ -220,10 +227,19 @@ for (let fileName of fontFiles) {
             let bez, lut;
             switch(cmd.toUpperCase()) {
 
-              case 'M': case 'L': 
+              case 'M':
                 if(abs) { cpx  = +x; cpy  = +y; }
                 else    { cpx += +x; cpy += +y; }
-                output += `${cpx},${cpy},${humanSpace}`; 
+
+                firstX = cpx; firstY = cpy;
+
+                output += `${cpx},${cpy},${humanSpace}`;
+                break;
+
+              case 'L':
+                if(abs) { cpx  = +x; cpy  = +y; }
+                else    { cpx += +x; cpy += +y; }
+                output += `${cpx},${cpy},${humanSpace}`;
                 break;
 
               case 'H':

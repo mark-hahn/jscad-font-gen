@@ -280,9 +280,9 @@ for (let fileName of fontFiles) {
 
               case 'T':
                 if ("QqTt".includes(lastCmd)) {
-                  x1 += cpx-x; y1 += cpy-y; // control point is reflection at (cpx,cpy)
+                  x1 += cpx-x1; y1 += cpy-y1; // control point is reflection at (cpx,cpy)
                 } else {
-                  x1  = cpx;   y1  = cpy;   // control point is current point (cpx,cpy)
+                  x1  = cpx;    y1  = cpy;    // control point is current point (cpx,cpy)
                 }
 
                 if(abs) { x  = +x;       y = +y; }

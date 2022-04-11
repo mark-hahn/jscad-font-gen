@@ -4,3 +4,6 @@ node_modules
 test.js
 jscad-fonts.js
 run
+
+.DS_Store
+package-lock.json

@@ -155,7 +155,7 @@ const reUnicode = new RegExp(/unicode="(.)"/i);
 const reHAdvX   = new RegExp(/horiz-adv-x="([\d\.]*?)"/is);
 const rePath    = new RegExp(/d="(.*?)"/is);
 const rePathEle = new RegExp(
-        /[\s,]*([A-Za-z])|[\s,]*([\d\.-]+)[\s,]+([\d\.-]+)/gs);
+        /[\s,]*([A-Za-z])|[\s,]*([\d\.-]+)[\s,]+([\d\.-]+)\s*/gs);
 
 
 //////////  GENERATE OUTPUT TEXT ///////////
@@ -226,15 +226,15 @@ for (let fileName of fontFiles) {
                 output += `${cpx},${cpy},${humanSpace}`; 
                 break;
 
-              case 'H': 
-                if(abs) { cpx  = +x; }
-                else    { cpx += +x; }
+              case 'H':
+                if(abs) { cpx  = +x; y = cpy; }
+                else    { cpx += +x; y = cpy; }
                 output += `${cpx},${cpy},${humanSpace}`; 
                 break;
 
               case 'V': 
-                if(abs) { cpy  = +y; }
-                else    { cpy += +y; }
+                if(abs) { cpy  = +y; x = cpx; }
+                else    { cpy += +y; x = cpx; }
                 output += `${cpx},${cpy},${humanSpace}`; 
                 break;
 
@@ -280,13 +280,11 @@ for (let fileName of fontFiles) {
 
               case 'T':
                 if ("QqTt".includes(lastCmd)) {
-                  x1 += cpx-x1; y1 += cpy-y1; // control point is reflection at (cpx,cpy)
+                  x1 += cpx-x; y1 += cpy-y; // control point is reflection at (cpx,cpy)
                 } else {
-                  x1 = cpx; y1 = cpy; // control point is current point (cpx,cpy)
+                  x1  = cpx;   y1  = cpy;   // control point is current point (cpx,cpy)
                 }
 
-                [,,x,y] = 
-                  exec(rePathEle, path, 'pathEle x, y ', false, true);
                 if(abs) { x  = +x;       y = +y; }
                 else    { x  = +x + cpx; y = +y + cpy; }
                 bez = new Bezier(cpx,cpy,x1,y1,x,y)

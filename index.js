@@ -155,7 +155,7 @@ const reUnicode = new RegExp(/unicode="(.)"/i);
 const reHAdvX   = new RegExp(/horiz-adv-x="([\d\.]*?)"/is);
 const rePath    = new RegExp(/d="(.*?)"/is);
 const rePathEle = new RegExp(
-        /[\s,]*([A-Za-z])|[\s,]*([\d\.-]+)[\s,]+([\d\.-]+)/gs);
+        /[\s,]*([A-Za-z])|[\s,]*([\d\.-]+)[\s,]+([\d\.-]+)\s*/gs);
 
 
 //////////  GENERATE OUTPUT TEXT ///////////
@@ -192,17 +192,27 @@ for (let fileName of fontFiles) {
       if(path) {
         let firstMove = true;
         let cmd = '', cpx = 0, cpy = 0, pathEle;
+
+        let lastCmd = ''; // required for "T" or "t" commands
+        let x1,y1, x2,y2; // dto.
+        let firstX,firstY; // first x,y of a segment - used by "Z" or "z"
         while ((pathEle = exec(rePathEle, path, 'pathEle', false, false))) {
           let [,ltr,x,y] = pathEle;
           if(ltr) {
             // we have a letter, ltr (beginning of command)
-            if(!"MmLlCcZz".includes(ltr)) {
+            if(!"MmLlHhVvCcZzQqTt".includes(ltr)) {
               console.log(`Error: unsupported letter '${ltr}' ` +
                           `in path: ${path}`);
               process.exit();
             }
-            // Z closes path -- ignore it
-            if(ltr == 'Z') continue;
+
+            // Z closes path
+            if ((ltr == 'Z') || (ltr === 'z')) {
+              output += `${firstX},${firstY},${humanSpace}`; 
+              continue;
+            }
+
+
             if(!firstMove && (ltr == 'M' || ltr == 'm'))  
               // move command starts new segment
               // but don't add extra comma at beginning
@@ -214,17 +224,39 @@ for (let fileName of fontFiles) {
             const abs = (cmd == cmd.toUpperCase() || firstMove);
             firstMove = false;
 
+            let bez, lut;
             switch(cmd.toUpperCase()) {
 
-              case 'M': case 'L': 
+              case 'M':
                 if(abs) { cpx  = +x; cpy  = +y; }
                 else    { cpx += +x; cpy += +y; }
+
+                firstX = cpx; firstY = cpy;
+
+                output += `${cpx},${cpy},${humanSpace}`;
+                break;
+
+              case 'L':
+                if(abs) { cpx  = +x; cpy  = +y; }
+                else    { cpx += +x; cpy += +y; }
+                output += `${cpx},${cpy},${humanSpace}`;
+                break;
+
+              case 'H':
+                if(abs) { cpx  = +x; y = cpy; }
+                else    { cpx += +x; y = cpy; }
+                output += `${cpx},${cpy},${humanSpace}`; 
+                break;
+
+              case 'V': 
+                if(abs) { cpy  = +y; x = cpx; }
+                else    { cpy += +y; x = cpx; }
                 output += `${cpx},${cpy},${humanSpace}`; 
                 break;
 
               case 'C': 
-                let x1 = x, y1 = y;
-                let [,,x2,y2] = 
+                x1 = x; y1 = y;
+                [,,x2,y2] = 
                   exec(rePathEle, path, 'pathEle x2,y2', false, true);
                 [,,x,y] = 
                   exec(rePathEle, path, 'pathEle x, y ', false, true);
@@ -234,8 +266,45 @@ for (let fileName of fontFiles) {
                 else    { x1 = +x1 + cpx;  y1 = +y1 + cpy; 
                           x2 = +x2 + cpx;  y2 = +y2 + cpy; 
                           x  = +x  + cpx;  y  = +y  + cpy; }
-                const bez = new Bezier(cpx,cpy,x1,y1,x2,y2,x,y)
-                const lut = bez.getLUT(8)
+                bez = new Bezier(cpx,cpy,x1,y1,x2,y2,x,y)
+                lut = bez.getLUT(8)
+                lut.forEach((p,i) => {
+                  if(i > 0) output += 
+                    `${p.x.toFixed(2)},${p.y.toFixed(2)},` + humanSpace;
+                });
+
+                cpx = x; cpy = y;
+                break;
+
+              case 'Q': 
+                x1 = x; y1 = y;
+                [,,x,y] = 
+                  exec(rePathEle, path, 'pathEle x, y ', false, true);
+                if(abs) { x1 = +x1;  y1 = +y1; 
+                          x  = +x;   y  = +y; }
+                else    { x1 = +x1 + cpx;  y1 = +y1 + cpy; 
+                          x  = +x  + cpx;  y  = +y  + cpy; }
+                bez = new Bezier(cpx,cpy,x1,y1,x,y)
+                lut = bez.getLUT(8)
+                lut.forEach((p,i) => {
+                  if(i > 0) output += 
+                    `${p.x.toFixed(2)},${p.y.toFixed(2)},` + humanSpace;
+                });
+
+                cpx = x; cpy = y;
+                break;
+
+              case 'T':
+                if ("QqTt".includes(lastCmd)) {
+                  x1 += cpx-x1; y1 += cpy-y1; // control point is reflection at (cpx,cpy)
+                } else {
+                  x1  = cpx;    y1  = cpy;    // control point is current point (cpx,cpy)
+                }
+
+                if(abs) { x  = +x;       y = +y; }
+                else    { x  = +x + cpx; y = +y + cpy; }
+                bez = new Bezier(cpx,cpy,x1,y1,x,y)
+                lut = bez.getLUT(8)
                 lut.forEach((p,i) => {
                   if(i > 0) output += 
                     `${p.x.toFixed(2)},${p.y.toFixed(2)},` + humanSpace;
@@ -244,6 +313,7 @@ for (let fileName of fontFiles) {
                 cpx = x; cpy = y;
                 break;
             }
+            lastCmd = cmd
           }
         }
       }
@@ -308,7 +378,7 @@ output = INJECTED_TEXT_INTRO + output + INJECTED_TEXT_OUTRO;
 const reInjectionStr = INJECTED_TEXT_INTRO + 
                 '.*' + INJECTED_TEXT_OUTRO;
 
-let fileOut = fs.readFileSync(outputFile).toString();
+let fileOut = (makeModule ? '' : fs.readFileSync(outputFile).toString());
 const reInjection = new RegExp(reInjectionStr,'igs');
 fileOut = fileOut.replace(reInjection,'');
 fileOut += output;

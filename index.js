@@ -199,7 +199,7 @@ for (let fileName of fontFiles) {
           let [,ltr,x,y] = pathEle;
           if(ltr) {
             // we have a letter, ltr (beginning of command)
-            if(!"MmLlCcZzQqTt".includes(ltr)) {
+            if(!"MmLlHhCcZzQqTt".includes(ltr)) {
               console.log(`Error: unsupported letter '${ltr}' ` +
                           `in path: ${path}`);
               process.exit();
@@ -223,6 +223,12 @@ for (let fileName of fontFiles) {
               case 'M': case 'L': 
                 if(abs) { cpx  = +x; cpy  = +y; }
                 else    { cpx += +x; cpy += +y; }
+                output += `${cpx},${cpy},${humanSpace}`; 
+                break;
+
+              case 'H': 
+                if(abs) { cpx  = +x; }
+                else    { cpx += +x; }
                 output += `${cpx},${cpy},${humanSpace}`; 
                 break;
 

@@ -196,7 +196,7 @@ for (let fileName of fontFiles) {
           let [,ltr,x,y] = pathEle;
           if(ltr) {
             // we have a letter, ltr (beginning of command)
-            if(!"MmLlCcZz".includes(ltr)) {
+            if(!"MmLlCcZzQq".includes(ltr)) {
               console.log(`Error: unsupported letter '${ltr}' ` +
                           `in path: ${path}`);
               process.exit();
@@ -214,6 +214,7 @@ for (let fileName of fontFiles) {
             const abs = (cmd == cmd.toUpperCase() || firstMove);
             firstMove = false;
 
+            let x1,y1, bez, lut
             switch(cmd.toUpperCase()) {
 
               case 'M': case 'L': 
@@ -223,7 +224,7 @@ for (let fileName of fontFiles) {
                 break;
 
               case 'C': 
-                let x1 = x, y1 = y;
+                x1 = x; y1 = y;
                 let [,,x2,y2] = 
                   exec(rePathEle, path, 'pathEle x2,y2', false, true);
                 [,,x,y] = 
@@ -234,8 +235,26 @@ for (let fileName of fontFiles) {
                 else    { x1 = +x1 + cpx;  y1 = +y1 + cpy; 
                           x2 = +x2 + cpx;  y2 = +y2 + cpy; 
                           x  = +x  + cpx;  y  = +y  + cpy; }
-                const bez = new Bezier(cpx,cpy,x1,y1,x2,y2,x,y)
-                const lut = bez.getLUT(8)
+                bez = new Bezier(cpx,cpy,x1,y1,x2,y2,x,y)
+                lut = bez.getLUT(8)
+                lut.forEach((p,i) => {
+                  if(i > 0) output += 
+                    `${p.x.toFixed(2)},${p.y.toFixed(2)},` + humanSpace;
+                });
+
+                cpx = x; cpy = y;
+                break;
+
+              case 'Q': 
+                x1 = x; y1 = y;
+                [,,x,y] = 
+                  exec(rePathEle, path, 'pathEle x, y ', false, true);
+                if(abs) { x1 = +x1;  y1 = +y1; 
+                          x  = +x;   y  = +y; }
+                else    { x1 = +x1 + cpx;  y1 = +y1 + cpy; 
+                          x  = +x  + cpx;  y  = +y  + cpy; }
+                bez = new Bezier(cpx,cpy,x1,y1,x,y)
+                lut = bez.getLUT(8)
                 lut.forEach((p,i) => {
                   if(i > 0) output += 
                     `${p.x.toFixed(2)},${p.y.toFixed(2)},` + humanSpace;

@@ -192,11 +192,14 @@ for (let fileName of fontFiles) {
       if(path) {
         let firstMove = true;
         let cmd = '', cpx = 0, cpy = 0, pathEle;
+
+        let lastCmd = ''; // required for "T" or "t" commands
+        let x1,y1, x2,y2; // dto.
         while ((pathEle = exec(rePathEle, path, 'pathEle', false, false))) {
           let [,ltr,x,y] = pathEle;
           if(ltr) {
             // we have a letter, ltr (beginning of command)
-            if(!"MmLlCcZzQq".includes(ltr)) {
+            if(!"MmLlCcZzQqTt".includes(ltr)) {
               console.log(`Error: unsupported letter '${ltr}' ` +
                           `in path: ${path}`);
               process.exit();
@@ -214,7 +217,7 @@ for (let fileName of fontFiles) {
             const abs = (cmd == cmd.toUpperCase() || firstMove);
             firstMove = false;
 
-            let x1,y1, bez, lut
+            let bez, lut;
             switch(cmd.toUpperCase()) {
 
               case 'M': case 'L': 
@@ -225,7 +228,7 @@ for (let fileName of fontFiles) {
 
               case 'C': 
                 x1 = x; y1 = y;
-                let [,,x2,y2] = 
+                [,,x2,y2] = 
                   exec(rePathEle, path, 'pathEle x2,y2', false, true);
                 [,,x,y] = 
                   exec(rePathEle, path, 'pathEle x, y ', false, true);
@@ -262,7 +265,29 @@ for (let fileName of fontFiles) {
 
                 cpx = x; cpy = y;
                 break;
+
+              case 'T':
+                if ("QqTt".includes(lastCmd)) {
+                  x1 += cpx-x1; y1 += cpy-y1; // control point is reflection at (cpx,cpy)
+                } else {
+                  x1 = cpx; y1 = cpy; // control point is current point (cpx,cpy)
+                }
+
+                [,,x,y] = 
+                  exec(rePathEle, path, 'pathEle x, y ', false, true);
+                if(abs) { x  = +x;       y = +y; }
+                else    { x  = +x + cpx; y = +y + cpy; }
+                bez = new Bezier(cpx,cpy,x1,y1,x,y)
+                lut = bez.getLUT(8)
+                lut.forEach((p,i) => {
+                  if(i > 0) output += 
+                    `${p.x.toFixed(2)},${p.y.toFixed(2)},` + humanSpace;
+                });
+
+                cpx = x; cpy = y;
+                break;
             }
+            lastCmd = cmd
           }
         }
       }
